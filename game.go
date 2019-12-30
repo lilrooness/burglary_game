@@ -2,9 +2,12 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
+	"math"
+	"fmt"
 )
 
 type entity struct {
+	id            int
 	x, y          int
 	lastUpdated   int
 	collisionType CollisionType
@@ -32,15 +35,15 @@ func (e *entity) MoveTowards(coord Coord) {
 
 func (game *Game) process_solid_collisions(collidable DynamicCollidable) {
 	xpos, ypos := collidable.get_xy()
-	for _, updatable := range(game.updatables) {
+	for _, updatable := range game.updatables {
 		u_xpos, u_ypos := updatable.get_xy()
 		if updatable.get_collision_type() == SOLID && u_xpos == xpos && u_ypos == ypos {
 			log.WithFields(logrus.Fields{
-    		"u_xpos": u_xpos,
-    		"u_ypos": u_ypos,
-    		"xpos": xpos,
-    		"ypos": ypos,
-  		}).Info("collision!")
+				"u_xpos": u_xpos,
+				"u_ypos": u_ypos,
+				"xpos":   xpos,
+				"ypos":   ypos,
+			}).Info("collision!")
 			collidable.trigger_collision(updatable)
 		}
 	}
@@ -79,6 +82,8 @@ const (
 
 type Stimulatable interface {
 	stimulate(stimulus Stimulus)
+	get_stimuli() (stimuli []Stimulus)
+	get_xy() (x, y int)
 }
 type Stimulus struct {
 	isScary   bool
@@ -96,10 +101,6 @@ const (
 
 type Ingestable interface {
 	get_ingestion_effects() []IngestionEffect
-}
-
-type Person struct {
-	entity
 }
 
 type Burgler struct {
@@ -134,40 +135,45 @@ func NewGame() Game {
 		updatables: []Updatable{
 			&SpiltMilk{
 				entity: entity{
+					id:            1,
 					x:             5,
 					y:             5,
 					collisionType: 1,
 				},
 			},
-			&Cat{
-				stimuli: []Stimulus{
-					Stimulus{
-						intensity: STIMULUS_MEDIUM,
-						x:         10,
-						y:         10,
-					},
-				},
-				entity: entity{
-					x:             1,
-					y:             1,
-					collisionType: 2,
-				},
-			},
+			NewCat(),
 		},
 	}
 }
 
-func getHighestStimuliIndex(stimuli []Stimulus) int {
+func getHighestStimuliIndex(stimulatable Stimulatable, stimulusRange int) int {
 	highestStimulusIndex := -1
+	stimuli := stimulatable.get_stimuli()
+	log.Info(fmt.Sprintf("Processing %d stimuli", len(stimuli)))
+	if len(stimuli) == 0 {
+		return highestStimulusIndex
+	}
+	x, y := stimulatable.get_xy()
 	for i, v := range stimuli {
-		if highestStimulusIndex == -1 {
+		d := dist(x, y, v.x, v.y)
+
+		log.WithFields(logrus.Fields{
+			"distance": d,
+		}).Info("checking distance to stimuli ...")
+		
+		if d <= stimulusRange && highestStimulusIndex == -1 {
 			highestStimulusIndex = i
 		} else {
-			if v.intensity > stimuli[highestStimulusIndex].intensity {
+			if d <= stimulusRange && v.intensity > stimuli[highestStimulusIndex].intensity {
 				highestStimulusIndex = i
 			}
 		}
 	}
 
 	return highestStimulusIndex
+}
+
+func dist(x1, y1, x2, y2 int) int {
+	result := math.Sqrt(math.Pow(float64(x1 - x2), 2) + math.Pow(float64(y1 - y2), 2))
+	return int(result)
 }

@@ -78,7 +78,7 @@ func render(screen tcell.Screen, game *Game) {
 			} else if cat.state == CAT_VOMITING {
 				style = style.Background(tcell.NewHexColor(int32(0x00ff00))).Foreground(tcell.NewHexColor(int32(0xff00ff)))
 			}
-			
+
 		case *CatSick:
 			glyph = '*'
 			catSick, _ := entity.(*CatSick)
@@ -100,13 +100,12 @@ func render(screen tcell.Screen, game *Game) {
 
 func main() {
 
-	  file, err := os.OpenFile("logrus.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	  if err == nil {
-	   log.Out = file
-	  } else {
-	   log.Info("Failed to log to file, using default stderr")
-	  }
-
+	file, err := os.OpenFile("game.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err == nil {
+		log.Out = file
+	} else {
+		log.Info("Failed to log to file, using default stderr")
+	}
 
 	game := NewGame()
 
