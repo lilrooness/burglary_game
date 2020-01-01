@@ -4,9 +4,6 @@ type State int
 
 const (
 	CAT_NORMAL   State = 0
-	CAT_DIRTY    State = 1
-	CAT_BATHING  State = 2
-	CAT_VOMITING State = 3
 )
 
 type CatState func (*Game, int) CatState
@@ -25,6 +22,7 @@ type Cat struct {
 }
 
 func NewCat() *Cat {
+	id := get_next_uuid()
 	cat := &Cat{
 		stimulusRange: 15,
 		stimuli: []Stimulus{
@@ -35,7 +33,7 @@ func NewCat() *Cat {
 			},
 		},
 		entity: entity{
-			id:            2,
+			id: id,
 			x:             1,
 			y:             1,
 			collisionType: 2,
@@ -56,18 +54,25 @@ func (cat *Cat) update(time int, game *Game) []entity {
 }
 
 func (cat *Cat) bathing(_ *Game, time int) CatState {
-	if time-cat.bathingSince >= 5 {
+	if time-cat.bathingSince >= 15{
+		var newState CatState
 		for _, dirt := range cat.dirtyWith {
 			switch dirt {
 			case "milk":
-				cat.ingest(&SpiltMilk{})
+				newState = cat.ingest(&SpiltMilk{})
 			}
 		}
-		log.Info("FINISHED BATHING")
-		return cat.idle
+
+		cat.dirtyWith = []string{}
+
+		if newState == nil {
+			return cat.idle	
+		} else {
+			return newState
+		}
+		
 	}
 
-	log.Info("STILL BATHING")
 	return cat.bathing
 }
 
@@ -80,13 +85,9 @@ func (cat *Cat) idle(_ *Game, time int) CatState {
 		return cat.moving
 	}
 
-	if cat.state == CAT_DIRTY {
-		log.Info("CAT_DIRTY")
+	if len(cat.dirtyWith) > 0 {
 		cat.bathingSince = time
 		return cat.bathing
-	} else if cat.state == CAT_VOMITING {
-		log.Info("CAT_DIRTY")
-		return cat.vomit
 	}
 
 	return cat.idle
@@ -94,12 +95,25 @@ func (cat *Cat) idle(_ *Game, time int) CatState {
 
 func (cat *Cat) vomit(game *Game, _ int) CatState {
 	cat.state = CAT_NORMAL
+	id := get_next_uuid()
 	game.updatables = append(game.updatables, &CatSick{
 		entity{
+			id: id,
 			x: cat.x,
 			y: cat.y,
 		},
 	})
+
+	for _, stimulatable := range(game.updatables) {
+		stimulatable, ok := stimulatable.(Stimulatable)
+		if ok && stimulatable.get_id() != cat.get_id() {
+			stimulatable.stimulate(Stimulus{
+				intensity: STIMULUS_HIGH,
+				x: cat.x,
+				y: cat.y,
+			})
+		}
+	}
 
 	cat.stimulate(Stimulus{
 		x:         cat.x + 5,
@@ -130,15 +144,15 @@ func (cat *Cat) moving(game *Game, time int) CatState {
 	return cat.moving
 }
 
-func (cat *Cat) ingest(ingestable Ingestable) {
+func (cat *Cat) ingest(ingestable Ingestable) CatState {
 	for _, effect := range ingestable.get_ingestion_effects() {
 		switch effect {
 		case LACTOSE:
-			cat.state = CAT_VOMITING
-		default:
-			cat.state = CAT_VOMITING
+			return cat.vomit
 		}
 	}
+
+	return nil
 }
 
 func (cat *Cat) get_xy() (x, y int) {
@@ -152,7 +166,6 @@ func (cat *Cat) stimulate(stimulus Stimulus) {
 func (cat *Cat) trigger_collision(updatable Updatable) {
 	if _, ok := updatable.(*SpiltMilk); ok {
 		log.Info("The cat is now dirty")
-		cat.state = CAT_DIRTY
 		cat.dirtyWith = append(cat.dirtyWith, "milk")
 	}
 }
@@ -163,4 +176,8 @@ func (cat *Cat) get_collision_type() CollisionType {
 
 func (cat *Cat) get_stimuli() []Stimulus {
 	return cat.stimuli
+}
+
+func (cat *Cat) get_id() int {
+	return cat.id
 }

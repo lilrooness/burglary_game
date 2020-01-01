@@ -37,7 +37,8 @@ func (game *Game) process_solid_collisions(collidable DynamicCollidable) {
 	xpos, ypos := collidable.get_xy()
 	for _, updatable := range game.updatables {
 		u_xpos, u_ypos := updatable.get_xy()
-		if updatable.get_collision_type() == SOLID && u_xpos == xpos && u_ypos == ypos {
+
+		if updatable.get_id() != collidable.get_id() && updatable.get_collision_type() == SOLID && u_xpos == xpos && u_ypos == ypos {
 			log.WithFields(logrus.Fields{
 				"u_xpos": u_xpos,
 				"u_ypos": u_ypos,
@@ -57,6 +58,7 @@ type Updatable interface {
 	update(time int, game *Game) []entity
 	get_xy() (x, y int)
 	get_collision_type() CollisionType
+	get_id() int
 }
 
 type CollisionType int
@@ -68,6 +70,7 @@ const (
 )
 
 type DynamicCollidable interface {
+	get_id() int
 	trigger_collision(updatable Updatable)
 	get_xy() (x, y int)
 }
@@ -84,6 +87,7 @@ type Stimulatable interface {
 	stimulate(stimulus Stimulus)
 	get_stimuli() (stimuli []Stimulus)
 	get_xy() (x, y int)
+	get_id() int
 }
 type Stimulus struct {
 	isScary   bool
@@ -135,13 +139,14 @@ func NewGame() Game {
 		updatables: []Updatable{
 			&SpiltMilk{
 				entity: entity{
-					id:            1,
+					id: get_next_uuid(),
 					x:             5,
 					y:             5,
 					collisionType: 1,
 				},
 			},
 			NewCat(),
+			NewPerson(),
 		},
 	}
 }

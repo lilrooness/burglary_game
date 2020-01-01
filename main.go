@@ -10,6 +10,7 @@ import (
 )
 
 var log = logrus.New()
+var id_counter = 0
 
 func start_loop(screen tcell.Screen, game *Game) {
 	quit := make(chan struct{})
@@ -43,6 +44,12 @@ func start_loop(screen tcell.Screen, game *Game) {
 	screen.Fini()
 }
 
+func get_next_uuid() int {
+	this_id := id_counter
+	id_counter = id_counter + 1
+	return this_id
+}
+
 func updateGame(game *Game, time int) {
 	game.update(time)
 }
@@ -66,19 +73,23 @@ func render(screen tcell.Screen, game *Game) {
 	var xpos, ypos int
 	for _, entity := range game.updatables {
 		switch entity.(type) {
+		case *Person:
+			glyph = '&'
+			person, _ := entity.(*Person)
+			xpos = person.x
+			ypos = person.y
+			style = style.Background(tcell.NewHexColor(int32(0x000000))).Foreground(tcell.NewHexColor(int32(0xff00ff)))
 		case *Cat:
 			glyph = '$'
 			cat, _ := entity.(*Cat)
 			xpos = cat.x
 			ypos = cat.y
-			if cat.state == CAT_NORMAL {
-				style = style.Background(tcell.NewHexColor(int32(0x000000))).Foreground(tcell.NewHexColor(int32(0xff00ff)))
-			} else if cat.state == CAT_DIRTY {
-				style = style.Background(tcell.NewHexColor(int32(0x00ffff))).Foreground(tcell.NewHexColor(int32(0xff00ff)))
-			} else if cat.state == CAT_VOMITING {
-				style = style.Background(tcell.NewHexColor(int32(0x00ff00))).Foreground(tcell.NewHexColor(int32(0xff00ff)))
-			}
 
+			if len(cat.dirtyWith) > 0 {
+				style = style.Background(tcell.NewHexColor(int32(0x00ffff))).Foreground(tcell.NewHexColor(int32(0xff00ff)))
+			} else {
+				style = style.Background(tcell.NewHexColor(int32(0x000000))).Foreground(tcell.NewHexColor(int32(0xff00ff)))
+			}
 		case *CatSick:
 			glyph = '*'
 			catSick, _ := entity.(*CatSick)

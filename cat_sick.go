@@ -21,3 +21,7 @@ func (catSick *CatSick) get_ingestion_effects() []IngestionEffect {
 		HEMETIC,
 	}
 }
+
+func (catSick *CatSick) get_id() int {
+	return catSick.id
+}

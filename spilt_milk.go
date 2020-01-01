@@ -21,3 +21,7 @@ func (spiltMilk *SpiltMilk) get_ingestion_effects() []IngestionEffect {
 		LACTOSE,
 	}
 }
+
+func (spiltMilk *SpiltMilk) get_id() int {
+	return spiltMilk.id
+}
