@@ -7,7 +7,6 @@ type Person struct {
 	currentSate     PersonState
 	stimulusRange   int
 	currentStimulus Stimulus
-	jobQueue        []Job
 }
 
 type PersonState func(*Game, int) PersonState
@@ -89,9 +88,4 @@ func (person *Person) get_stimuli() []Stimulus {
 
 func (person *Person) get_id() int {
 	return person.id
-}
-
-func (person *Person) queue_job(job Job) bool {
-	person.jobQueue = append(person.jobQueue, job)
-	return true
 }

@@ -18,7 +18,7 @@ type Coord struct {
 }
 
 type Job interface {
-	do(updatable Updatable)
+	do(employable Employable, time int) bool
 }
 
 type Updatable interface {
