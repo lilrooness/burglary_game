@@ -95,14 +95,7 @@ func (cat *Cat) idle(_ *Game, time int) CatState {
 
 func (cat *Cat) vomit(game *Game, _ int) CatState {
 	cat.state = CAT_NORMAL
-	id := get_next_uuid()
-	game.updatables = append(game.updatables, &CatSick{
-		entity{
-			id: id,
-			x:  cat.x,
-			y:  cat.y,
-		},
-	})
+	game.updatables = append(game.updatables, NewCatSick(cat.x, cat.y))
 
 	for _, stimulatable := range game.updatables {
 		stimulatable, ok := stimulatable.(Stimulatable)

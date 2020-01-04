@@ -74,7 +74,7 @@ func (person *Person) stimulate(stimulus Stimulus) {
 	person.stimuli = append(person.stimuli, stimulus)
 }
 
-func (person *Person) trigger_collision(_ Updatable) {
+func (person *Person) trigger_collision(updatable Updatable) {
 	log.Info("NOT IMPLEMENTED: trigger_collision")
 }
 
@@ -89,3 +89,4 @@ func (person *Person) get_stimuli() []Stimulus {
 func (person *Person) get_id() int {
 	return person.id
 }
+

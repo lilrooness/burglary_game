@@ -28,6 +28,11 @@ type Updatable interface {
 	get_id() int
 }
 
+type cleanable interface {
+	Updatable
+	clean() bool
+}
+
 type Employable interface {
 	Updatable
 	queue_job(job Job) bool
