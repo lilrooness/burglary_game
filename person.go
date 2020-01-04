@@ -2,24 +2,24 @@ package main
 
 type Person struct {
 	entity
-	state int
-	stimuli []Stimulus
-	currentSate PersonState
-	stimulusRange int
+	state           int
+	stimuli         []Stimulus
+	currentSate     PersonState
+	stimulusRange   int
 	currentStimulus Stimulus
+	jobQueue        []Job
 }
 
-type PersonState func (*Game, int) PersonState
+type PersonState func(*Game, int) PersonState
 
 func NewPerson() *Person {
 	person := &Person{
 		entity: entity{
 			id: get_next_uuid(),
-			x: 1,
-			y: 2,
+			x:  1,
+			y:  2,
 		},
 		stimulusRange: 20,
-
 	}
 	person.currentSate = person.idle
 
@@ -89,4 +89,9 @@ func (person *Person) get_stimuli() []Stimulus {
 
 func (person *Person) get_id() int {
 	return person.id
+}
+
+func (person *Person) queue_job(job Job) bool {
+	person.jobQueue = append(person.jobQueue, job)
+	return true
 }

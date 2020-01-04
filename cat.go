@@ -3,21 +3,21 @@ package main
 type State int
 
 const (
-	CAT_NORMAL   State = 0
+	CAT_NORMAL State = 0
 )
 
-type CatState func (*Game, int) CatState
+type CatState func(*Game, int) CatState
 
 type Cat struct {
 	entity
-	state         State
-	stimuli       []Stimulus
-	currentTarget Coord
-	walkingSpeed  int
-	bathingSince  int
-	dirtyWith     []string
-	stimulusRange int
-	currentState  CatState
+	state           State
+	stimuli         []Stimulus
+	currentTarget   Coord
+	walkingSpeed    int
+	bathingSince    int
+	dirtyWith       []string
+	stimulusRange   int
+	currentState    CatState
 	currentStimulus Stimulus
 }
 
@@ -33,7 +33,7 @@ func NewCat() *Cat {
 			},
 		},
 		entity: entity{
-			id: id,
+			id:            id,
 			x:             1,
 			y:             1,
 			collisionType: 2,
@@ -54,7 +54,7 @@ func (cat *Cat) update(time int, game *Game) []entity {
 }
 
 func (cat *Cat) bathing(_ *Game, time int) CatState {
-	if time-cat.bathingSince >= 15{
+	if time-cat.bathingSince >= 15 {
 		var newState CatState
 		for _, dirt := range cat.dirtyWith {
 			switch dirt {
@@ -66,11 +66,11 @@ func (cat *Cat) bathing(_ *Game, time int) CatState {
 		cat.dirtyWith = []string{}
 
 		if newState == nil {
-			return cat.idle	
+			return cat.idle
 		} else {
 			return newState
 		}
-		
+
 	}
 
 	return cat.bathing
@@ -99,18 +99,18 @@ func (cat *Cat) vomit(game *Game, _ int) CatState {
 	game.updatables = append(game.updatables, &CatSick{
 		entity{
 			id: id,
-			x: cat.x,
-			y: cat.y,
+			x:  cat.x,
+			y:  cat.y,
 		},
 	})
 
-	for _, stimulatable := range(game.updatables) {
+	for _, stimulatable := range game.updatables {
 		stimulatable, ok := stimulatable.(Stimulatable)
 		if ok && stimulatable.get_id() != cat.get_id() {
 			stimulatable.stimulate(Stimulus{
 				intensity: STIMULUS_HIGH,
-				x: cat.x,
-				y: cat.y,
+				x:         cat.x,
+				y:         cat.y,
 			})
 		}
 	}

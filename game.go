@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"math"
-	"fmt"
 )
 
 type entity struct {
@@ -11,6 +11,84 @@ type entity struct {
 	x, y          int
 	lastUpdated   int
 	collisionType CollisionType
+}
+
+type Coord struct {
+	x, y int
+}
+
+type Job interface {
+	do(updatable Updatable)
+}
+
+type Updatable interface {
+	update(time int, game *Game) []entity
+	get_xy() (x, y int)
+	get_collision_type() CollisionType
+	get_id() int
+}
+
+type Employable interface {
+	Updatable
+	queue_job(job Job) bool
+}
+
+type CollisionType int
+
+const (
+	NO_COLLISION CollisionType = 0
+	SOLID        CollisionType = 1
+	DYNAMIC      CollisionType = 2
+)
+
+type DynamicCollidable interface {
+	get_id() int
+	trigger_collision(updatable Updatable)
+	get_xy() (x, y int)
+}
+
+type StimulusIntensity int
+
+const (
+	STIMULUS_LOW    StimulusIntensity = 1
+	STIMULUS_MEDIUM StimulusIntensity = 2
+	STIMULUS_HIGH   StimulusIntensity = 3
+)
+
+type Stimulatable interface {
+	Updatable
+	stimulate(stimulus Stimulus)
+	get_stimuli() (stimuli []Stimulus)
+}
+type Stimulus struct {
+	isScary   bool
+	intensity StimulusIntensity
+	x, y      int
+}
+
+type IngestionEffect int
+
+const (
+	LACTOSE IngestionEffect = 0
+	ALCOHOL IngestionEffect = 1
+	HEMETIC IngestionEffect = 2
+)
+
+type Ingestable interface {
+	get_ingestion_effects() []IngestionEffect
+}
+
+type Burgler struct {
+	entity
+}
+
+type Room struct {
+	w, h, x, y int
+}
+
+type Game struct {
+	updatables []Updatable
+	rooms      []Room
 }
 
 func (e *entity) MoveTowards(coord Coord) {
@@ -50,76 +128,6 @@ func (game *Game) process_solid_collisions(collidable DynamicCollidable) {
 	}
 }
 
-type Coord struct {
-	x, y int
-}
-
-type Updatable interface {
-	update(time int, game *Game) []entity
-	get_xy() (x, y int)
-	get_collision_type() CollisionType
-	get_id() int
-}
-
-type CollisionType int
-
-const (
-	NO_COLLISION CollisionType = 0
-	SOLID        CollisionType = 1
-	DYNAMIC      CollisionType = 2
-)
-
-type DynamicCollidable interface {
-	get_id() int
-	trigger_collision(updatable Updatable)
-	get_xy() (x, y int)
-}
-
-type StimulusIntensity int
-
-const (
-	STIMULUS_LOW    StimulusIntensity = 1
-	STIMULUS_MEDIUM StimulusIntensity = 2
-	STIMULUS_HIGH   StimulusIntensity = 3
-)
-
-type Stimulatable interface {
-	stimulate(stimulus Stimulus)
-	get_stimuli() (stimuli []Stimulus)
-	get_xy() (x, y int)
-	get_id() int
-}
-type Stimulus struct {
-	isScary   bool
-	intensity StimulusIntensity
-	x, y      int
-}
-
-type IngestionEffect int
-
-const (
-	LACTOSE IngestionEffect = 0
-	ALCOHOL IngestionEffect = 1
-	HEMETIC IngestionEffect = 2
-)
-
-type Ingestable interface {
-	get_ingestion_effects() []IngestionEffect
-}
-
-type Burgler struct {
-	entity
-}
-
-type Room struct {
-	w, h, x, y int
-}
-
-type Game struct {
-	updatables []Updatable
-	rooms      []Room
-}
-
 func (game *Game) update(time int) {
 	for _, v := range game.updatables {
 		v.update(time, game)
@@ -139,7 +147,7 @@ func NewGame() Game {
 		updatables: []Updatable{
 			&SpiltMilk{
 				entity: entity{
-					id: get_next_uuid(),
+					id:            get_next_uuid(),
 					x:             5,
 					y:             5,
 					collisionType: 1,
@@ -165,7 +173,7 @@ func getHighestStimuliIndex(stimulatable Stimulatable, stimulusRange int) int {
 		log.WithFields(logrus.Fields{
 			"distance": d,
 		}).Info("checking distance to stimuli ...")
-		
+
 		if d <= stimulusRange && highestStimulusIndex == -1 {
 			highestStimulusIndex = i
 		} else {
@@ -179,6 +187,6 @@ func getHighestStimuliIndex(stimulatable Stimulatable, stimulusRange int) int {
 }
 
 func dist(x1, y1, x2, y2 int) int {
-	result := math.Sqrt(math.Pow(float64(x1 - x2), 2) + math.Pow(float64(y1 - y2), 2))
+	result := math.Sqrt(math.Pow(float64(x1-x2), 2) + math.Pow(float64(y1-y2), 2))
 	return int(result)
 }
