@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"math"
 )
@@ -18,7 +17,8 @@ type Coord struct {
 }
 
 type Job interface {
-	do(employable Employable, time int) bool
+	do(employable Employable, game *Game, time int) bool
+	get_coord() Coord
 }
 
 type Updatable interface {
@@ -28,7 +28,7 @@ type Updatable interface {
 	get_id() int
 }
 
-type cleanable interface {
+type Cleanable interface {
 	Updatable
 	clean() bool
 }
@@ -92,8 +92,9 @@ type Room struct {
 }
 
 type Game struct {
-	updatables []Updatable
-	rooms      []Room
+	updatables    []Updatable
+	rooms         []Room
+	deletable_ids []int
 }
 
 func (e *entity) MoveTowards(coord Coord) {
@@ -134,9 +135,56 @@ func (game *Game) process_solid_collisions(collidable DynamicCollidable) {
 }
 
 func (game *Game) update(time int) {
-	for _, v := range game.updatables {
-		v.update(time, game)
+
+	for _, id := range game.deletable_ids {
+		ok, index := game.get_updatable_index_by_id(id)
+		if ok {
+			log.Info("found a deletable!")
+			game.updatables = append(game.updatables[:index], game.updatables[index+1:]...)
+		}
 	}
+
+	for _, v := range game.updatables {
+		if !game.is_updatable_deleted(v.get_id()) {
+			v.update(time, game)
+		}
+	}
+}
+
+func (game *Game) is_updatable_deleted(id int) bool {
+	if ok, _ := game.get_updatable_index_by_id(id); !ok {
+		return true
+	}
+
+	for _, v := range game.deletable_ids {
+		if v == id {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (game *Game) delete_updatable(id int) {
+	game.deletable_ids = append(game.deletable_ids, id)
+}
+
+func (game *Game) get_updatable_index_by_id(id int) (bool, int) {
+	for i, v := range game.updatables {
+		if v.get_id() == id {
+			return true, i
+		}
+	}
+
+	return false, -1
+}
+
+func (game *Game) get_updatable_by_id(id int) (bool, Updatable) {
+	if ok, index := game.get_updatable_index_by_id(id); ok {
+		return true, game.updatables[index]
+	}
+
+	return false, nil
 }
 
 func NewGame() Game {
@@ -167,7 +215,6 @@ func NewGame() Game {
 func getHighestStimuliIndex(stimulatable Stimulatable, stimulusRange int) int {
 	highestStimulusIndex := -1
 	stimuli := stimulatable.get_stimuli()
-	log.Info(fmt.Sprintf("Processing %d stimuli", len(stimuli)))
 	if len(stimuli) == 0 {
 		return highestStimulusIndex
 	}

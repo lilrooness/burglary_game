@@ -95,16 +95,14 @@ func (cat *Cat) idle(_ *Game, time int) CatState {
 
 func (cat *Cat) vomit(game *Game, _ int) CatState {
 	cat.state = CAT_NORMAL
-	game.updatables = append(game.updatables, NewCatSick(cat.x, cat.y))
+	catSick := NewCatSick(cat.x, cat.y)
+	game.updatables = append(game.updatables, catSick)
 
-	for _, stimulatable := range game.updatables {
-		stimulatable, ok := stimulatable.(Stimulatable)
-		if ok && stimulatable.get_id() != cat.get_id() {
-			stimulatable.stimulate(Stimulus{
-				intensity: STIMULUS_HIGH,
-				x:         cat.x,
-				y:         cat.y,
-			})
+	for _, updatable := range game.updatables {
+		employable, ok := updatable.(Employable)
+		if ok && employable.get_id() != cat.get_id() {
+			employable.queue_job(NewCleaningJob(catSick))
+			break
 		}
 	}
 

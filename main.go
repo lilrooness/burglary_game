@@ -51,6 +51,10 @@ func get_next_uuid() int {
 }
 
 func updateGame(game *Game, time int) {
+	log.WithFields(logrus.Fields{
+		"updating updatables": len(game.updatables),
+		"fields":              game.updatables,
+	}).Info("Updating game")
 	game.update(time)
 }
 
